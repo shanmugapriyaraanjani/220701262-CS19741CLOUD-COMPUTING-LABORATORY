@@ -10,7 +10,8 @@ UserRouter.get("/:name", (req, res) => {
     if (!err) {
       res.status(200).send();
     } else {
-      throw err;
+      console.error("MySQL error:", err.message);
+      res.status(500).send({ error: err.message });
     }
   });
 });

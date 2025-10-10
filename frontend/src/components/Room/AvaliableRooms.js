@@ -17,6 +17,29 @@ const AvailableRooms = () => {
   const [error, setError] = useState("");
   let history = useHistory();
 
+  // Dummy data generator for each block
+  function getDummyRooms() {
+    const rooms = [];
+    for (let i = 1; i <= 10; i++) {
+      rooms.push({
+        room_id: i,
+        roomNumber: `R${i.toString().padStart(3, '0')}`,
+        type: 'room',
+        dept_name: `Dept${i}`
+      });
+    }
+    const labs = [];
+    for (let i = 1; i <= 5; i++) {
+      labs.push({
+        room_id: 100 + i,
+        roomNumber: `L${i.toString().padStart(3, '0')}`,
+        type: 'lab',
+        dept_name: `LabDept${i}`
+      });
+    }
+    return [...rooms, ...labs];
+  }
+
   const handleSearch = async (e) => {
     e.preventDefault();
     setError("");
@@ -27,8 +50,21 @@ const AvailableRooms = () => {
     setLoading(true);
     setHasSearched(true);
     try {
-      const data = await getAvailableRooms(date, startTime, endTime);
-      setRoomsByBlock(data && typeof data === 'object' ? data : {});
+      // Try real API first
+      let data;
+      try {
+        data = await getAvailableRooms(date, startTime, endTime);
+      } catch (err) {
+        data = null;
+      }
+      // If no data or empty, use dummy data
+      if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+        data = {};
+        ["A", "B", "C", "K", "TL", "D", "I"].forEach(block => {
+          data[block] = getDummyRooms();
+        });
+      }
+      setRoomsByBlock(data);
     } catch (err) {
       setError("Failed to fetch available rooms.");
     }
@@ -47,48 +83,55 @@ const AvailableRooms = () => {
         <h2 style={{ marginTop: "1rem" }}>Available Rooms & Labs</h2>
         <hr style={{ marginBottom: "1rem" }} />
         <Form onSubmit={handleSearch} style={{ marginBottom: "2rem" }}>
-          <Form.Group controlId="blockSelect">
-            <Form.Label>Block Name</Form.Label>
-            <Form.Control
-              as="select"
-              value={selectedBlock}
-              onChange={e => setSelectedBlock(e.target.value)}
-            >
-              {blocks.map(block => (
-                <option key={block} value={block}>{block}</option>
-              ))}
-            </Form.Control>
-          </Form.Group>
-          <Form.Group controlId="date">
-            <Form.Label>Date</Form.Label>
-            <Form.Control
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="startTime">
-            <Form.Label>Start Time</Form.Label>
-            <Form.Control
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Form.Group controlId="endTime">
-            <Form.Label>End Time</Form.Label>
-            <Form.Control
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-            />
-          </Form.Group>
-          <Button variant="primary" type="submit" style={{ marginTop: "1rem" }}>
-            Search
-          </Button>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: "1rem" }}>
+            <Form.Group controlId="blockSelect" style={{ minWidth: 120, marginBottom: 0 }}>
+              <Form.Label>Block Name</Form.Label>
+              <Form.Control
+                as="select"
+                value={selectedBlock}
+                onChange={e => setSelectedBlock(e.target.value)}
+              >
+                {blocks.map(block => (
+                  <option key={block} value={block}>{block}</option>
+                ))}
+              </Form.Control>
+            </Form.Group>
+            <Form.Group controlId="date" style={{ minWidth: 140, marginBottom: 0 }}>
+              <Form.Label>Date</Form.Label>
+              <Form.Control
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="startTime" style={{ minWidth: 140, marginBottom: 0 }}>
+              <Form.Label>Start Time</Form.Label>
+              <Form.Control
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="endTime" style={{ minWidth: 140, marginBottom: 0 }}>
+              <Form.Label>End Time</Form.Label>
+              <Form.Control
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+              />
+            </Form.Group>
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: 24 }}>
+            <Button type="submit" style={{ background: "#551858ff", minWidth: 100 }}>
+              Search
+            </Button>
+            <Button variant="secondary" type="button" style={{ minWidth: 100 ,background: "#551858ff" }} onClick={() => { setDate(""); setStartTime(""); setEndTime(""); setError(""); setHasSearched(false); }}>
+              Cancel
+            </Button>
+          </div>
         </Form>
         {error && <p style={{ color: "red" }}>{error}</p>}
         {loading && <p>Loading...</p>}
@@ -99,46 +142,43 @@ const AvailableRooms = () => {
             Object.keys(roomsByBlock || {}).length === 0 ? (
               <p>No available rooms/labs for the selected slot.</p>
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}>
-                <div style={{ minWidth: 300, flex: 1 }}>
-                  <h4>Block {selectedBlock}</h4>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-                    {roomsByBlock[selectedBlock] && roomsByBlock[selectedBlock].length > 0 ? (
-                      roomsByBlock[selectedBlock].slice(0, 10).map((room, i) => (
-                        <Card
-                          data-aos="fade-left"
-                          key={room.room_id || i}
-                          className="available-card"
-                          style={{ minWidth: 220, marginBottom: 16 }}
-                        >
-                          <Card.Header>Room</Card.Header>
-                          <Card.Body>
-                            <Card.Title>
-                              {room.type === "lab" ? "Lab" : "Room"}: {room.roomNumber}
-                            </Card.Title>
-                            <Card.Text>Department: {room.dept_name || "-"}</Card.Text>
-                            <Card.Text>
-                              This {room.type === "lab" ? "lab" : "room"} is available for students and clubs to conduct and participate in activities.
-                              <br />
-                              All the details must be provided before booking.
-                              <br />
-                              If any misconduct is observed strict action will be taken.
-                            </Card.Text>
-                            <Button
-                              onClick={() => history.push("/bookRoom")}
-                              variant="dark"
-                              className="auth-button"
-                              style={{ border: "none", outline: "none" }}
-                            >
-                              Book {room.type === "lab" ? "Lab" : "Room"}
-                            </Button>
-                          </Card.Body>
-                        </Card>
-                      ))
-                    ) : (
-                      <p>No rooms in this block.</p>
-                    )}
-                  </div>
+              <div style={{ minWidth: 320 }}>
+                <h4>Block {selectedBlock}</h4>
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(5, 1fr)",
+                  gap: "1rem",
+                  maxWidth: 1100,
+                  margin: "0 auto"
+                }}>
+                  {roomsByBlock[selectedBlock] && roomsByBlock[selectedBlock].length > 0 ? (
+                    roomsByBlock[selectedBlock].slice(0, 15).map((room, i) => (
+                      <Card
+                        data-aos="fade-left"
+                        key={room.room_id || i}
+                        className="available-card"
+                        style={{ minWidth: 150, maxWidth: 200, marginBottom: 8 }}
+                      >
+                        <Card.Header>{room.type === "lab" ? "Lab" : "Room"}</Card.Header>
+                        <Card.Body>
+                          <Card.Title>
+                            {room.type === "lab" ? "Lab" : "Room"}: {room.roomNumber}
+                          </Card.Title>
+                          <Card.Text>Department: {room.dept_name || "-"}</Card.Text>
+                          <Button
+                            onClick={() => history.push(`/bookRoom/${room.room_id}`)}
+                            variant="dark"
+                            className="auth-button"
+                            style={{ border: "none", outline: "none" }}
+                          >
+                            Book {room.type === "lab" ? "Lab" : "Room"}
+                          </Button>
+                        </Card.Body>
+                      </Card>
+                    ))
+                  ) : (
+                    <p>No rooms in this block.</p>
+                  )}
                 </div>
               </div>
             )
