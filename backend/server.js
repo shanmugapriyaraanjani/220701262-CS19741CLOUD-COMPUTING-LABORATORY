@@ -7,6 +7,7 @@ const mysqlConnection = require('./connection');
 
 const RoomRouter = require("./routes/rooms");
 const UserRouter = require("./routes/user");
+const ChatRouter = require("./routes/chat");
 
 const rooms = require("./data/RoomData");
 
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/rooms", RoomRouter);
 app.use("/user", UserRouter);
+app.use("/api/chat", ChatRouter);
 
 app.get("/", (req, res) => {
   res.send("api running!");
