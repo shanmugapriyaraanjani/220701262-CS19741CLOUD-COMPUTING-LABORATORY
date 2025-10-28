@@ -10,15 +10,17 @@ const ProfilePage = () => {
   const [cUser, setUser] = useState(auth.currentUser);
 
   useEffect(() => {
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        history.push("/");
-      }
-    });
-  }, []);
+  const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (user) {
+      setUser(user);
+    } else {
+      history.push("/");
+    }
+  });
 
+  // Cleanup the listener when the component unmounts
+  return () => unsubscribe();
+}, [history]);
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to logout?")) {
       try {
