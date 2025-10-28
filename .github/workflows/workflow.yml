@@ -26,6 +26,12 @@ jobs:
       - name: Build backend
         run: npm run build || echo "No build step for backend"
 
+      # ✅ Login to Azure before deploying
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy to Azure Web App (Backend)
         uses: azure/webapps-deploy@v3
         with:
@@ -51,7 +57,13 @@ jobs:
         run: npm install
 
       - name: Build frontend
-        run: npm run build
+        run: CI=false npm run build
+
+      # ✅ Login to Azure before deploying
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Web App (Frontend)
         uses: azure/webapps-deploy@v3
